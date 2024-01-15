@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "philiprehberger-email-validate"
-version = "0.3.1"
+version = "0.4.0"
 description = "Email validation with syntax checking and normalization."
 readme = "README.md"
 license = "MIT"

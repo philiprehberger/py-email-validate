@@ -74,6 +74,43 @@ print(result.is_disposable)  # True
 set_disposable_domains({"tempmail.xyz", "fakeemail.org"})
 ```
 
+### Role-Based Email Detection
+
+```python
+from philiprehberger_email_validate import validate_email, is_role_based
+
+result = validate_email("info@example.com")
+print(result.is_role_based)  # True
+
+is_role_based("admin@example.com")    # True
+is_role_based("john@example.com")     # False
+```
+
+### Email Domain Suggestions
+
+```python
+from philiprehberger_email_validate import validate_email, suggest_domain
+
+result = validate_email("user@gmial.com")
+print(result.suggested_domain)  # "gmail.com"
+
+suggest_domain("hotmial.com")   # "hotmail.com"
+suggest_domain("gmail.com")     # "" (no suggestion needed)
+```
+
+### RFC 5321 Strict Mode
+
+```python
+from philiprehberger_email_validate import validate_email
+
+result = validate_email("user@example.com", strict=True)
+print(result.valid)  # True
+
+result = validate_email(".user@example.com", strict=True)
+print(result.valid)  # False
+print(result.error)  # "Local part starts or ends with a dot (RFC 5321)"
+```
+
 ### Bulk Validation
 
 ```python
@@ -83,21 +120,25 @@ results = validate_many(["user@example.com", "bad@@email", "test@gmail.com"])
 for r in results:
     print(r.normalized, r.valid)
 
-# With concurrent MX lookups
-results = validate_many(emails, check_mx=True, concurrent=True)
+# With concurrent MX lookups and strict mode
+results = validate_many(emails, check_mx=True, concurrent=True, strict=True)
 ```
 
 ## API
 
 | Function / Class | Description |
 |------------------|-------------|
-| `EmailResult` | Dataclass with `valid`, `normalized`, `domain`, `error`, and `is_disposable` fields |
+| `EmailResult` | Dataclass with `valid`, `normalized`, `domain`, `error`, `is_disposable`, `is_role_based`, and `suggested_domain` fields |
 | `normalize(email)` | Normalize an email: lowercase, strip whitespace, Gmail dot-insensitivity, plus-addressing cleanup |
 | `is_valid(email)` | Quick boolean syntax check |
-| `validate_email(email, check_mx, extra_disposable)` | Full validation returning an `EmailResult` |
-| `validate_many(emails, check_mx, concurrent, extra_disposable)` | Validate multiple emails with optional parallel MX lookups |
+| `validate_email(email, check_mx, extra_disposable, strict)` | Full validation returning an `EmailResult` |
+| `validate_many(emails, check_mx, concurrent, extra_disposable, strict)` | Validate multiple emails with optional parallel MX lookups |
+| `is_role_based(email)` | Check if an email uses a role-based local part (info@, admin@, etc.) |
+| `suggest_domain(domain)` | Suggest a corrected domain for common typos |
 | `set_disposable_domains(domains)` | Merge additional domains into the global disposable domains set |
 | `DISPOSABLE_DOMAINS` | Mutable set of known disposable email domains |
+| `ROLE_PREFIXES` | Frozen set of known role-based email prefixes |
+| `COMMON_DOMAINS` | Frozen set of common email provider domains used for suggestions |
 
 ## Development
 
