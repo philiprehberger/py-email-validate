@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "philiprehberger-email-validate"
-version = "0.1.0"
+version = "0.1.1"
 description = "Email validation with syntax checking and normalization."
 readme = "README.md"
 license = "MIT"
@@ -24,9 +24,16 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/philiprehberger/py-email-validate"
+Homepage = "https://github.com/philiprehberger/py-email-validate#readme"
 Repository = "https://github.com/philiprehberger/py-email-validate"
 Issues = "https://github.com/philiprehberger/py-email-validate/issues"
+Changelog = "https://github.com/philiprehberger/py-email-validate/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/philiprehberger_email_validate"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+strict = true
