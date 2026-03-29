@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 (2026-03-28)
+
+- Add custom disposable domain list support via `extra_disposable` parameter and `set_disposable_domains()` function
+- Add email normalization for Gmail dot-insensitivity, plus-addressing cleanup, and lowercase
+- Add `concurrent` parameter to `validate_many()` for controlling parallel MX lookups
+- Update README with new feature documentation and compliance fixes
+
 ## 0.2.0 (2026-03-27)
 
 - Add `validate_many()` for bulk email validation with parallel MX lookups

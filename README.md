@@ -42,7 +42,9 @@ is_valid("not-an-email")       # False
 ```python
 from philiprehberger_email_validate import normalize
 
-normalize("  User@Example.COM  ")  # "user@example.com"
+normalize("  User@Example.COM  ")          # "user@example.com"
+normalize("first.last+tag@gmail.com")      # "firstlast@gmail.com"
+normalize("user+promo@example.com")        # "user@example.com"
 ```
 
 ### MX Lookup
@@ -55,6 +57,28 @@ if not result.valid:
     print(result.error)  # "MX lookup failed for domain: example.com"
 ```
 
+### Disposable Email Detection
+
+```python
+from philiprehberger_email_validate import validate_email
+
+result = validate_email("user@mailinator.com")
+print(result.is_disposable)  # True
+```
+
+### Custom Disposable Domains
+
+```python
+from philiprehberger_email_validate import validate_email, set_disposable_domains
+
+# Per-call extra domains
+result = validate_email("user@tempmail.xyz", extra_disposable=["tempmail.xyz"])
+print(result.is_disposable)  # True
+
+# Global merge with built-in list
+set_disposable_domains({"tempmail.xyz", "fakeemail.org"})
+```
+
 ### Bulk Validation
 
 ```python
@@ -63,18 +87,9 @@ from philiprehberger_email_validate import validate_many
 results = validate_many(["user@example.com", "bad@@email", "test@gmail.com"])
 for r in results:
     print(r.normalized, r.valid)
-```
 
-### Disposable Email Detection
-
-```python
-from philiprehberger_email_validate import validate_email
-
-result = validate_email("user@mailinator.com")
-print(result.is_disposable)  # True
-
-result = validate_email("user@gmail.com")
-print(result.is_disposable)  # False
+# With concurrent MX lookups
+results = validate_many(emails, check_mx=True, concurrent=True)
 ```
 
 ## API
@@ -82,11 +97,12 @@ print(result.is_disposable)  # False
 | Function / Class | Description |
 |------------------|-------------|
 | `EmailResult` | Dataclass with `valid`, `normalized`, `domain`, `error`, and `is_disposable` fields |
-| `normalize(email)` | Strip whitespace and lowercase an email address |
+| `normalize(email)` | Normalize an email: lowercase, strip whitespace, Gmail dot-insensitivity, plus-addressing cleanup |
 | `is_valid(email)` | Quick boolean syntax check |
-| `validate_email(email, check_mx=False)` | Full validation returning an `EmailResult` |
-| `validate_many(emails, check_mx=False)` | Validate multiple emails with optional parallel MX lookups |
-| `DISPOSABLE_DOMAINS` | Set of ~50 known disposable email domains |
+| `validate_email(email, check_mx, extra_disposable)` | Full validation returning an `EmailResult` |
+| `validate_many(emails, check_mx, concurrent, extra_disposable)` | Validate multiple emails with optional parallel MX lookups |
+| `set_disposable_domains(domains)` | Merge additional domains into the global disposable domains set |
+| `DISPOSABLE_DOMAINS` | Mutable set of known disposable email domains |
 
 ## Development
 
@@ -97,10 +113,10 @@ python -m pytest tests/ -v
 
 ## Support
 
-If you find this package useful, consider starring the repository.
+If you find this package useful, consider giving it a star on GitHub — it helps motivate continued maintenance and development.
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Philip%20Rehberger-blue?logo=linkedin)](https://www.linkedin.com/in/philiprehberger/)
-[![More packages](https://img.shields.io/badge/More%20packages-philiprehberger-orange)](https://github.com/philiprehberger?tab=repositories)
+[![LinkedIn](https://img.shields.io/badge/Philip%20Rehberger-LinkedIn-0A66C2?logo=linkedin)](https://www.linkedin.com/in/philiprehberger)
+[![More packages](https://img.shields.io/badge/more-open%20source%20packages-blue)](https://philiprehberger.com/open-source-packages)
 
 ## License
 
