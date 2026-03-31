@@ -2,12 +2,7 @@
 
 [![Tests](https://github.com/philiprehberger/py-email-validate/actions/workflows/publish.yml/badge.svg)](https://github.com/philiprehberger/py-email-validate/actions/workflows/publish.yml)
 [![PyPI version](https://img.shields.io/pypi/v/philiprehberger-email-validate.svg)](https://pypi.org/project/philiprehberger-email-validate/)
-[![GitHub release](https://img.shields.io/github/v/release/philiprehberger/py-email-validate)](https://github.com/philiprehberger/py-email-validate/releases)
 [![Last updated](https://img.shields.io/github/last-commit/philiprehberger/py-email-validate)](https://github.com/philiprehberger/py-email-validate/commits/main)
-[![License](https://img.shields.io/github/license/philiprehberger/py-email-validate)](LICENSE)
-[![Bug Reports](https://img.shields.io/github/issues/philiprehberger/py-email-validate/bug)](https://github.com/philiprehberger/py-email-validate/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
-[![Feature Requests](https://img.shields.io/github/issues/philiprehberger/py-email-validate/enhancement)](https://github.com/philiprehberger/py-email-validate/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
-[![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-ec6cb9)](https://github.com/sponsors/philiprehberger)
 
 Email validation with syntax checking and normalization.
 
@@ -113,10 +108,21 @@ python -m pytest tests/ -v
 
 ## Support
 
-If you find this package useful, consider giving it a star on GitHub — it helps motivate continued maintenance and development.
+If you find this project useful:
 
-[![LinkedIn](https://img.shields.io/badge/Philip%20Rehberger-LinkedIn-0A66C2?logo=linkedin)](https://www.linkedin.com/in/philiprehberger)
-[![More packages](https://img.shields.io/badge/more-open%20source%20packages-blue)](https://philiprehberger.com/open-source-packages)
+⭐ [Star the repo](https://github.com/philiprehberger/py-email-validate)
+
+🐛 [Report issues](https://github.com/philiprehberger/py-email-validate/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
+
+💡 [Suggest features](https://github.com/philiprehberger/py-email-validate/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
+
+❤️ [Sponsor development](https://github.com/sponsors/philiprehberger)
+
+🌐 [All Open Source Projects](https://philiprehberger.com/open-source-packages)
+
+💻 [GitHub Profile](https://github.com/philiprehberger)
+
+🔗 [LinkedIn Profile](https://www.linkedin.com/in/philiprehberger)
 
 ## License
 
