@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 (2026-04-01)
+
+- Add email domain typo suggestions via `suggest_domain()` with built-in list of common providers
+- Add role-based email detection via `is_role_based()` for addresses like info@, admin@, support@
+- Add RFC 5321 strict mode with `strict` parameter on `validate_email()` and `validate_many()`
+- Add `is_role_based` and `suggested_domain` fields to `EmailResult` dataclass
+- Add `ROLE_PREFIXES` and `COMMON_DOMAINS` constants to public API
+
 ## 0.3.1 (2026-03-31)
 
 - Standardize README to 3-badge format with emoji Support section

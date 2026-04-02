@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 from philiprehberger_email_validate import (
+    COMMON_DOMAINS,
     DISPOSABLE_DOMAINS,
+    ROLE_PREFIXES,
     EmailResult,
+    is_role_based,
     is_valid,
     normalize,
     set_disposable_domains,
+    suggest_domain,
     validate_email,
     validate_many,
 )
@@ -174,3 +178,233 @@ def test_validate_many_non_concurrent() -> None:
     assert len(results) == 2
     assert results[0].valid is True
     assert results[1].valid is False
+
+
+def test_validate_many_with_strict() -> None:
+    results = validate_many(
+        ["user@example.com", ".bad@example.com"],
+        strict=True,
+    )
+    assert results[0].valid is True
+    assert results[1].valid is False
+
+
+def test_validate_many_preserves_order() -> None:
+    emails = ["a@example.com", "b@example.com", "c@example.com"]
+    results = validate_many(emails)
+    assert [r.normalized for r in results] == emails
+
+
+# --- is_role_based ---
+
+
+def test_is_role_based_info() -> None:
+    assert is_role_based("info@example.com") is True
+
+
+def test_is_role_based_admin() -> None:
+    assert is_role_based("admin@example.com") is True
+
+
+def test_is_role_based_support() -> None:
+    assert is_role_based("support@example.com") is True
+
+
+def test_is_role_based_postmaster() -> None:
+    assert is_role_based("postmaster@example.com") is True
+
+
+def test_is_role_based_noreply() -> None:
+    assert is_role_based("noreply@example.com") is True
+    assert is_role_based("no-reply@example.com") is True
+
+
+def test_is_role_based_sales() -> None:
+    assert is_role_based("sales@example.com") is True
+
+
+def test_is_role_based_webmaster() -> None:
+    assert is_role_based("webmaster@example.com") is True
+
+
+def test_is_role_based_regular_user() -> None:
+    assert is_role_based("john@example.com") is False
+
+
+def test_is_role_based_personal_name() -> None:
+    assert is_role_based("alice.smith@example.com") is False
+
+
+def test_is_role_based_case_insensitive() -> None:
+    assert is_role_based("ADMIN@example.com") is True
+
+
+def test_is_role_based_with_plus_tag() -> None:
+    assert is_role_based("info+tag@example.com") is True
+
+
+def test_is_role_based_no_at_sign() -> None:
+    assert is_role_based("notanemail") is False
+
+
+def test_is_role_based_in_validate_email() -> None:
+    result = validate_email("info@example.com")
+    assert result.is_role_based is True
+    assert result.valid is True
+
+
+def test_not_role_based_in_validate_email() -> None:
+    result = validate_email("john@example.com")
+    assert result.is_role_based is False
+
+
+# --- suggest_domain ---
+
+
+def test_suggest_domain_gmail_typo() -> None:
+    assert suggest_domain("gmial.com") == "gmail.com"
+
+
+def test_suggest_domain_gmail_typo_gmal() -> None:
+    assert suggest_domain("gmal.com") == "gmail.com"
+
+
+def test_suggest_domain_hotmail_typo() -> None:
+    assert suggest_domain("hotmial.com") == "hotmail.com"
+
+
+def test_suggest_domain_yahoo_typo() -> None:
+    assert suggest_domain("yahooo.com") == "yahoo.com"
+
+
+def test_suggest_domain_outlook_typo() -> None:
+    assert suggest_domain("outlok.com") == "outlook.com"
+
+
+def test_suggest_domain_exact_match_no_suggestion() -> None:
+    assert suggest_domain("gmail.com") == ""
+
+
+def test_suggest_domain_unknown_domain_no_suggestion() -> None:
+    assert suggest_domain("mycompany.com") == ""
+
+
+def test_suggest_domain_case_insensitive() -> None:
+    assert suggest_domain("GMIAL.COM") == "gmail.com"
+
+
+def test_suggest_domain_strips_whitespace() -> None:
+    assert suggest_domain("  gmial.com  ") == "gmail.com"
+
+
+def test_suggest_domain_in_validate_email() -> None:
+    result = validate_email("user@gmial.com")
+    assert result.suggested_domain == "gmail.com"
+    assert result.valid is True
+
+
+def test_no_suggestion_in_validate_email() -> None:
+    result = validate_email("user@gmail.com")
+    assert result.suggested_domain == ""
+
+
+# --- RFC 5321 strict mode ---
+
+
+def test_strict_valid_email() -> None:
+    result = validate_email("user@example.com", strict=True)
+    assert result.valid is True
+    assert result.error == ""
+
+
+def test_strict_rejects_leading_dot_local() -> None:
+    result = validate_email(".user@example.com", strict=True)
+    assert result.valid is False
+    assert "dot" in result.error.lower() or "RFC 5321" in result.error
+
+
+def test_strict_rejects_trailing_dot_local() -> None:
+    result = validate_email("user.@example.com", strict=True)
+    assert result.valid is False
+    assert "RFC 5321" in result.error
+
+
+def test_strict_rejects_consecutive_dots() -> None:
+    result = validate_email("us..er@example.com", strict=True)
+    assert result.valid is False
+    assert "Consecutive dots" in result.error
+
+
+def test_strict_local_part_length() -> None:
+    long_local = "a" * 65
+    result = validate_email(f"{long_local}@example.com", strict=True)
+    assert result.valid is False
+    assert "64 characters" in result.error
+
+
+def test_strict_local_part_max_length_ok() -> None:
+    local_64 = "a" * 64
+    result = validate_email(f"{local_64}@example.com", strict=True)
+    assert result.valid is True
+
+
+def test_strict_domain_label_too_long() -> None:
+    long_label = "a" * 64
+    result = validate_email(f"user@{long_label}.com", strict=True)
+    assert result.valid is False
+    assert "label" in result.error.lower() or "RFC 5321" in result.error
+
+
+def test_strict_false_is_lenient() -> None:
+    # Leading dot fails strict but passes lenient (basic regex doesn't reject it
+    # because the basic regex allows dots in local)
+    result = validate_email("us..er@example.com", strict=False)
+    # Basic regex may or may not accept this; the point is strict=False doesn't
+    # run the additional RFC 5321 checks
+    assert result.error != "Consecutive dots in local part (RFC 5321)"
+
+
+def test_strict_combined_with_disposable() -> None:
+    result = validate_email("user@mailinator.com", strict=True)
+    assert result.valid is True
+    assert result.is_disposable is True
+
+
+def test_strict_combined_with_role_based() -> None:
+    result = validate_email("admin@example.com", strict=True)
+    assert result.valid is True
+    assert result.is_role_based is True
+
+
+# --- EmailResult fields ---
+
+
+def test_email_result_defaults() -> None:
+    result = EmailResult(valid=True, normalized="a@b.com", domain="b.com")
+    assert result.error == ""
+    assert result.is_disposable is False
+    assert result.is_role_based is False
+    assert result.suggested_domain == ""
+
+
+def test_email_result_all_fields() -> None:
+    result = validate_email("info@gmial.com")
+    assert isinstance(result.is_role_based, bool)
+    assert isinstance(result.suggested_domain, str)
+    assert isinstance(result.is_disposable, bool)
+
+
+# --- ROLE_PREFIXES constant ---
+
+
+def test_role_prefixes_contains_expected() -> None:
+    expected = {"info", "admin", "support", "postmaster", "webmaster", "sales", "noreply"}
+    assert expected.issubset(ROLE_PREFIXES)
+
+
+# --- COMMON_DOMAINS constant ---
+
+
+def test_common_domains_contains_major_providers() -> None:
+    expected = {"gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com"}
+    assert expected.issubset(COMMON_DOMAINS)
