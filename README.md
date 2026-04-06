@@ -124,6 +124,35 @@ for r in results:
 results = validate_many(emails, check_mx=True, concurrent=True, strict=True)
 ```
 
+### Extract Emails from Text
+
+```python
+from philiprehberger_email_validate import extract_emails
+
+emails = extract_emails("Contact hello@example.com or support@test.org")
+# ["hello@example.com", "support@test.org"]
+```
+
+### Email Parts
+
+```python
+from philiprehberger_email_validate import email_parts
+
+parts = email_parts("user@example.com")
+print(parts.local)   # "user"
+print(parts.domain)  # "example.com"
+print(parts.tld)     # "com"
+```
+
+### Mask Email
+
+```python
+from philiprehberger_email_validate import mask_email
+
+mask_email("john@example.com")     # "j***n@example.com"
+mask_email("alice@example.com")    # "a***e@example.com"
+```
+
 ## API
 
 | Function / Class | Description |
@@ -139,6 +168,10 @@ results = validate_many(emails, check_mx=True, concurrent=True, strict=True)
 | `DISPOSABLE_DOMAINS` | Mutable set of known disposable email domains |
 | `ROLE_PREFIXES` | Frozen set of known role-based email prefixes |
 | `COMMON_DOMAINS` | Frozen set of common email provider domains used for suggestions |
+| `extract_emails(text)` | Extract all valid email addresses from text, deduplicated |
+| `email_parts(email)` | Split email into structured parts (local, domain, tld, normalized) |
+| `EmailParts` | Dataclass with `local`, `domain`, `tld`, `normalized` fields |
+| `mask_email(email, mask_char, visible)` | Mask the local part for privacy display |
 
 ## Development
 

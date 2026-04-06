@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0 (2026-04-06)
+
+- Add `extract_emails(text)` to find all valid email addresses in a block of text
+- Add `email_parts(email)` to split an email into structured components (local, domain, tld)
+- Add `mask_email(email)` to mask the local part for privacy display
+- Add `EmailParts` dataclass for structured email components
+
 ## 0.4.0 (2026-04-01)
 
 - Add email domain typo suggestions via `suggest_domain()` with built-in list of common providers
