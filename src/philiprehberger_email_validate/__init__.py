@@ -19,10 +19,17 @@ __all__ = [
     "DISPOSABLE_DOMAINS",
     "ROLE_PREFIXES",
     "COMMON_DOMAINS",
+    "extract_emails",
+    "EmailParts",
+    "mask_email",
 ]
 
 _EMAIL_REGEX = re.compile(
     r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"
+)
+
+_EXTRACT_REGEX = re.compile(
+    r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
 )
 
 # RFC 5321 strict mode regex:
@@ -457,3 +464,84 @@ def validate_many(
         )
         for email in emails
     ]
+
+
+@dataclass
+class EmailParts:
+    """Structured parts of an email address."""
+
+    local: str
+    domain: str
+    tld: str
+    normalized: str
+
+
+def extract_emails(text: str) -> list[str]:
+    """Extract all valid email addresses from a block of text.
+
+    Finds email-like patterns and returns only those that pass syntax
+    validation.  Duplicates are removed, preserving first-occurrence order.
+
+    Args:
+        text: The text to search for email addresses.
+
+    Returns:
+        A list of unique, valid email addresses found in the text.
+    """
+    candidates = _EXTRACT_REGEX.findall(text)
+    seen: set[str] = set()
+    results: list[str] = []
+    for candidate in candidates:
+        lower = candidate.strip().lower()
+        if lower not in seen and is_valid(lower):
+            seen.add(lower)
+            results.append(lower)
+    return results
+
+
+def email_parts(email: str) -> EmailParts:
+    """Split an email address into structured parts.
+
+    Args:
+        email: The email address to parse.
+
+    Returns:
+        An EmailParts dataclass with local, domain, tld, and normalized fields.
+
+    Raises:
+        ValueError: If the email has no '@' separator.
+    """
+    cleaned = email.strip().lower()
+    if "@" not in cleaned:
+        raise ValueError(f"Invalid email address: {email!r}")
+    local, domain = cleaned.rsplit("@", 1)
+    tld = domain.rsplit(".", 1)[-1] if "." in domain else ""
+    return EmailParts(
+        local=local,
+        domain=domain,
+        tld=tld,
+        normalized=normalize(email),
+    )
+
+
+def mask_email(email: str, mask_char: str = "*", visible: int = 1) -> str:
+    """Mask the local part of an email for privacy display.
+
+    Args:
+        email: The email address to mask.
+        mask_char: Character used for masking. Defaults to ``"*"``.
+        visible: Number of characters to keep visible at the start and end
+            of the local part. Defaults to 1.
+
+    Returns:
+        The masked email string (e.g. ``"j***n@example.com"``).
+    """
+    cleaned = email.strip().lower()
+    if "@" not in cleaned:
+        return cleaned
+    local, domain = cleaned.rsplit("@", 1)
+    if len(local) <= visible * 2:
+        masked_local = local[0] + mask_char * (len(local) - 1)
+    else:
+        masked_local = local[:visible] + mask_char * 3 + local[-visible:]
+    return f"{masked_local}@{domain}"

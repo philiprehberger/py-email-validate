@@ -6,9 +6,13 @@ from philiprehberger_email_validate import (
     COMMON_DOMAINS,
     DISPOSABLE_DOMAINS,
     ROLE_PREFIXES,
+    EmailParts,
     EmailResult,
+    email_parts,
+    extract_emails,
     is_role_based,
     is_valid,
+    mask_email,
     normalize,
     set_disposable_domains,
     suggest_domain,
@@ -408,3 +412,49 @@ def test_role_prefixes_contains_expected() -> None:
 def test_common_domains_contains_major_providers() -> None:
     expected = {"gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com"}
     assert expected.issubset(COMMON_DOMAINS)
+
+
+def test_extract_emails_basic():
+    text = "Contact us at hello@example.com or support@test.org for help."
+    result = extract_emails(text)
+    assert result == ["hello@example.com", "support@test.org"]
+
+
+def test_extract_emails_deduplicates():
+    text = "Email alice@example.com and also Alice@Example.com"
+    result = extract_emails(text)
+    assert result == ["alice@example.com"]
+
+
+def test_extract_emails_no_matches():
+    text = "No emails here, just text."
+    result = extract_emails(text)
+    assert result == []
+
+
+def test_email_parts_basic():
+    parts = email_parts("User@Example.COM")
+    assert parts.local == "user"
+    assert parts.domain == "example.com"
+    assert parts.tld == "com"
+    assert parts.normalized == "user@example.com"
+
+
+def test_email_parts_no_at():
+    try:
+        email_parts("invalid")
+        assert False, "Should have raised ValueError"
+    except ValueError:
+        pass
+
+
+def test_mask_email_basic():
+    assert mask_email("john@example.com") == "j***n@example.com"
+
+
+def test_mask_email_short_local():
+    assert mask_email("ab@example.com") == "a*@example.com"
+
+
+def test_mask_email_custom_char():
+    assert mask_email("alice@example.com", mask_char="#") == "a###e@example.com"
