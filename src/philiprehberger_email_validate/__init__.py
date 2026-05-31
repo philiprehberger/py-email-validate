@@ -16,6 +16,8 @@ __all__ = [
     "set_disposable_domains",
     "suggest_domain",
     "is_role_based",
+    "is_disposable",
+    "compare_emails",
     "DISPOSABLE_DOMAINS",
     "ROLE_PREFIXES",
     "COMMON_DOMAINS",
@@ -283,6 +285,47 @@ def is_role_based(email: str) -> bool:
     if "+" in local:
         local = local.split("+", 1)[0]
     return local in ROLE_PREFIXES
+
+
+def is_disposable(email: str) -> bool:
+    """Return True if *email*'s domain is in the disposable-domains set.
+
+    Uses the package's DISPOSABLE_DOMAINS set (which may be replaced
+    via set_disposable_domains).
+
+    Args:
+        email: The email address to check.
+
+    Returns:
+        True if the domain is a known disposable provider, False otherwise.
+        Returns False for inputs without an ``@`` separator.
+    """
+    cleaned = normalize(email)
+    if "@" not in cleaned:
+        return False
+    domain = cleaned.rsplit("@", 1)[1]
+    return domain in DISPOSABLE_DOMAINS
+
+
+def compare_emails(a: str, b: str) -> bool:
+    """Return True if *a* and *b* are equivalent after normalization.
+
+    Uses normalize() which handles case-insensitivity, Gmail dot-stripping,
+    and plus-tag stripping. Returns False if either input lacks an ``@``
+    separator (so two equal invalid strings are not reported as equivalent).
+
+    Args:
+        a: The first email address.
+        b: The second email address.
+
+    Returns:
+        True if both addresses normalize to the same value.
+    """
+    norm_a = normalize(a)
+    norm_b = normalize(b)
+    if "@" not in norm_a or "@" not in norm_b:
+        return False
+    return norm_a == norm_b
 
 
 def suggest_domain(domain: str) -> str:

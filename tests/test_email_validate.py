@@ -8,8 +8,10 @@ from philiprehberger_email_validate import (
     ROLE_PREFIXES,
     EmailParts,
     EmailResult,
+    compare_emails,
     email_parts,
     extract_emails,
+    is_disposable,
     is_role_based,
     is_valid,
     mask_email,
@@ -458,3 +460,37 @@ def test_mask_email_short_local():
 
 def test_mask_email_custom_char():
     assert mask_email("alice@example.com", mask_char="#") == "a###e@example.com"
+
+
+# --- is_disposable ---
+
+
+def test_is_disposable_known_domain() -> None:
+    assert is_disposable("user@mailinator.com") is True
+
+
+def test_is_disposable_non_disposable() -> None:
+    assert is_disposable("user@gmail.com") is False
+
+
+def test_is_disposable_no_at_sign() -> None:
+    assert is_disposable("not-an-email") is False
+
+
+# --- compare_emails ---
+
+
+def test_compare_emails_case_insensitive() -> None:
+    assert compare_emails("Foo@Gmail.com", "foo@gmail.com") is True
+
+
+def test_compare_emails_gmail_dots_and_plus() -> None:
+    assert compare_emails("foo.bar+tag@gmail.com", "foobar@gmail.com") is True
+
+
+def test_compare_emails_different_local() -> None:
+    assert compare_emails("foo@a.com", "bar@a.com") is False
+
+
+def test_compare_emails_invalid_inputs() -> None:
+    assert compare_emails("not-an-email", "") is False

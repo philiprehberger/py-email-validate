@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0 (2026-05-30)
+
+- Add `is_disposable()` convenience function for checking disposable email domains
+- Add `compare_emails(a, b)` for normalized email comparison
+
 ## 0.5.0 (2026-04-06)
 
 - Add `extract_emails(text)` to find all valid email addresses in a block of text

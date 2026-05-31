@@ -153,6 +153,26 @@ mask_email("john@example.com")     # "j***n@example.com"
 mask_email("alice@example.com")    # "a***e@example.com"
 ```
 
+### Disposable check
+
+```python
+from philiprehberger_email_validate import is_disposable
+
+is_disposable("user@mailinator.com")   # True
+is_disposable("user@gmail.com")        # False
+is_disposable("not-an-email")          # False
+```
+
+### Comparing emails
+
+```python
+from philiprehberger_email_validate import compare_emails
+
+compare_emails("Foo@Gmail.com", "foo@gmail.com")              # True
+compare_emails("foo.bar+tag@gmail.com", "foobar@gmail.com")   # True
+compare_emails("foo@a.com", "bar@a.com")                      # False
+```
+
 ## API
 
 | Function / Class | Description |
@@ -163,6 +183,8 @@ mask_email("alice@example.com")    # "a***e@example.com"
 | `validate_email(email, check_mx, extra_disposable, strict)` | Full validation returning an `EmailResult` |
 | `validate_many(emails, check_mx, concurrent, extra_disposable, strict)` | Validate multiple emails with optional parallel MX lookups |
 | `is_role_based(email)` | Check if an email uses a role-based local part (info@, admin@, etc.) |
+| `is_disposable(email)` | Check if an email's domain is in the disposable-domains set |
+| `compare_emails(a, b)` | Check if two emails are equivalent after normalization |
 | `suggest_domain(domain)` | Suggest a corrected domain for common typos |
 | `set_disposable_domains(domains)` | Merge additional domains into the global disposable domains set |
 | `DISPOSABLE_DOMAINS` | Mutable set of known disposable email domains |
