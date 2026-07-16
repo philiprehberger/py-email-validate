@@ -4,6 +4,8 @@
 [![PyPI version](https://img.shields.io/pypi/v/philiprehberger-email-validate.svg)](https://pypi.org/project/philiprehberger-email-validate/)
 [![Last updated](https://img.shields.io/github/last-commit/philiprehberger/py-email-validate)](https://github.com/philiprehberger/py-email-validate/commits/main)
 
+![philiprehberger-email-validate](https://raw.githubusercontent.com/philiprehberger/py-email-validate/main/package-card.webp)
+
 Email validation with syntax checking and normalization.
 
 ## Installation
@@ -86,16 +88,35 @@ is_role_based("admin@example.com")    # True
 is_role_based("john@example.com")     # False
 ```
 
+### Free Provider Detection
+
+Flag consumer/free mailboxes (useful for filtering B2B signups that should use a
+company address):
+
+```python
+from philiprehberger_email_validate import validate_email, is_free_email
+
+result = validate_email("user@gmail.com")
+print(result.is_free)  # True
+
+is_free_email("user@gmail.com")        # True
+is_free_email("user@acme-corp.com")    # False
+```
+
 ### Email Domain Suggestions
 
 ```python
-from philiprehberger_email_validate import validate_email, suggest_domain
+from philiprehberger_email_validate import validate_email, suggest_domain, suggest_email
 
 result = validate_email("user@gmial.com")
 print(result.suggested_domain)  # "gmail.com"
 
 suggest_domain("hotmial.com")   # "hotmail.com"
 suggest_domain("gmail.com")     # "" (no suggestion needed)
+
+# Correct the whole address (local part and any +tag are preserved)
+suggest_email("first.last+promo@hotmial.com")  # "first.last+promo@hotmail.com"
+suggest_email("user@gmail.com")                # "" (no suggestion needed)
 ```
 
 ### RFC 5321 Strict Mode
@@ -177,19 +198,22 @@ compare_emails("foo@a.com", "bar@a.com")                      # False
 
 | Function / Class | Description |
 |------------------|-------------|
-| `EmailResult` | Dataclass with `valid`, `normalized`, `domain`, `error`, `is_disposable`, `is_role_based`, and `suggested_domain` fields |
+| `EmailResult` | Dataclass with `valid`, `normalized`, `domain`, `error`, `is_disposable`, `is_role_based`, `is_free`, and `suggested_domain` fields |
 | `normalize(email)` | Normalize an email: lowercase, strip whitespace, Gmail dot-insensitivity, plus-addressing cleanup |
 | `is_valid(email)` | Quick boolean syntax check |
 | `validate_email(email, check_mx, extra_disposable, strict)` | Full validation returning an `EmailResult` |
 | `validate_many(emails, check_mx, concurrent, extra_disposable, strict)` | Validate multiple emails with optional parallel MX lookups |
 | `is_role_based(email)` | Check if an email uses a role-based local part (info@, admin@, etc.) |
 | `is_disposable(email)` | Check if an email's domain is in the disposable-domains set |
+| `is_free_email(email)` | Check if an email's domain is a known free/public provider (gmail, yahoo, etc.) |
 | `compare_emails(a, b)` | Check if two emails are equivalent after normalization |
 | `suggest_domain(domain)` | Suggest a corrected domain for common typos |
+| `suggest_email(email)` | Suggest a corrected full email address for a domain typo |
 | `set_disposable_domains(domains)` | Merge additional domains into the global disposable domains set |
 | `DISPOSABLE_DOMAINS` | Mutable set of known disposable email domains |
 | `ROLE_PREFIXES` | Frozen set of known role-based email prefixes |
 | `COMMON_DOMAINS` | Frozen set of common email provider domains used for suggestions |
+| `FREE_EMAIL_DOMAINS` | Frozen set of known free/public email provider domains |
 | `extract_emails(text)` | Extract all valid email addresses from text, deduplicated |
 | `email_parts(email)` | Split email into structured parts (local, domain, tld, normalized) |
 | `EmailParts` | Dataclass with `local`, `domain`, `tld`, `normalized` fields |

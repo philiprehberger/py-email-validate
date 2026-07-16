@@ -5,6 +5,7 @@ from __future__ import annotations
 from philiprehberger_email_validate import (
     COMMON_DOMAINS,
     DISPOSABLE_DOMAINS,
+    FREE_EMAIL_DOMAINS,
     ROLE_PREFIXES,
     EmailParts,
     EmailResult,
@@ -12,12 +13,14 @@ from philiprehberger_email_validate import (
     email_parts,
     extract_emails,
     is_disposable,
+    is_free_email,
     is_role_based,
     is_valid,
     mask_email,
     normalize,
     set_disposable_domains,
     suggest_domain,
+    suggest_email,
     validate_email,
     validate_many,
 )
@@ -494,3 +497,52 @@ def test_compare_emails_different_local() -> None:
 
 def test_compare_emails_invalid_inputs() -> None:
     assert compare_emails("not-an-email", "") is False
+
+
+# --- is_free_email ---
+
+
+def test_is_free_email_true() -> None:
+    assert is_free_email("user@gmail.com") is True
+    assert is_free_email("user@outlook.com") is True
+
+
+def test_is_free_email_normalizes_case_and_whitespace() -> None:
+    assert is_free_email("  User@GMAIL.com ") is True
+
+
+def test_is_free_email_business_domain() -> None:
+    assert is_free_email("user@acme-corp.com") is False
+
+
+def test_is_free_email_no_at_sign() -> None:
+    assert is_free_email("not-an-email") is False
+
+
+def test_free_email_domains_is_frozenset() -> None:
+    assert isinstance(FREE_EMAIL_DOMAINS, frozenset)
+    assert "gmail.com" in FREE_EMAIL_DOMAINS
+
+
+def test_validate_email_sets_is_free() -> None:
+    assert validate_email("user@gmail.com").is_free is True
+    assert validate_email("user@acme-corp.com").is_free is False
+
+
+# --- suggest_email ---
+
+
+def test_suggest_email_corrects_domain() -> None:
+    assert suggest_email("user@gmial.com") == "user@gmail.com"
+
+
+def test_suggest_email_preserves_local_and_tag() -> None:
+    assert suggest_email("first.last+promo@hotmial.com") == "first.last+promo@hotmail.com"
+
+
+def test_suggest_email_no_suggestion_for_known_domain() -> None:
+    assert suggest_email("user@gmail.com") == ""
+
+
+def test_suggest_email_no_at_sign() -> None:
+    assert suggest_email("not-an-email") == ""

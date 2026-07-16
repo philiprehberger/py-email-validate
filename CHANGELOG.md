@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0 (2026-07-15)
+
+- Add free/public provider detection via `is_free_email()` and the `FREE_EMAIL_DOMAINS` constant
+- Add `is_free` field to `EmailResult`, populated by `validate_email()`
+- Add `suggest_email()` for full-address typo correction (preserves the local part and any plus-tag)
+- Fix: export `email_parts` in `__all__` (was documented but not exported)
+- Add README card image for registry rendering
+
 ## 0.6.0 (2026-05-30)
 
 - Add `is_disposable()` convenience function for checking disposable email domains

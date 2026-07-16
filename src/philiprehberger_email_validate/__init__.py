@@ -15,14 +15,18 @@ __all__ = [
     "validate_many",
     "set_disposable_domains",
     "suggest_domain",
+    "suggest_email",
     "is_role_based",
     "is_disposable",
+    "is_free_email",
     "compare_emails",
     "DISPOSABLE_DOMAINS",
     "ROLE_PREFIXES",
     "COMMON_DOMAINS",
+    "FREE_EMAIL_DOMAINS",
     "extract_emails",
     "EmailParts",
+    "email_parts",
     "mask_email",
 ]
 
@@ -186,6 +190,52 @@ COMMON_DOMAINS: frozenset[str] = frozenset({
     "optonline.net",
 })
 
+# Free/public consumer email providers. Used by is_free_email() to flag
+# addresses that are typically not tied to an organization (useful when
+# filtering B2B signups). This is intentionally a distinct concept from
+# COMMON_DOMAINS (which drives typo suggestions and may include providers not
+# considered "free").
+FREE_EMAIL_DOMAINS: frozenset[str] = frozenset({
+    "gmail.com",
+    "googlemail.com",
+    "yahoo.com",
+    "yahoo.co.uk",
+    "yahoo.fr",
+    "yahoo.de",
+    "ymail.com",
+    "rocketmail.com",
+    "hotmail.com",
+    "hotmail.co.uk",
+    "hotmail.fr",
+    "outlook.com",
+    "live.com",
+    "msn.com",
+    "aol.com",
+    "icloud.com",
+    "me.com",
+    "mac.com",
+    "mail.com",
+    "gmx.com",
+    "gmx.de",
+    "gmx.net",
+    "web.de",
+    "protonmail.com",
+    "proton.me",
+    "pm.me",
+    "zoho.com",
+    "yandex.com",
+    "yandex.ru",
+    "fastmail.com",
+    "tutanota.com",
+    "hushmail.com",
+    "inbox.com",
+    "mail.ru",
+    "qq.com",
+    "163.com",
+    "126.com",
+    "sina.com",
+})
+
 
 def _levenshtein(a: str, b: str) -> int:
     """Compute the Levenshtein edit distance between two strings."""
@@ -225,6 +275,7 @@ class EmailResult:
     error: str = field(default="")
     is_disposable: bool = field(default=False)
     is_role_based: bool = field(default=False)
+    is_free: bool = field(default=False)
     suggested_domain: str = field(default="")
 
 
@@ -307,6 +358,27 @@ def is_disposable(email: str) -> bool:
     return domain in DISPOSABLE_DOMAINS
 
 
+def is_free_email(email: str) -> bool:
+    """Return True if *email*'s domain is a known free/public provider.
+
+    Free providers (gmail.com, yahoo.com, outlook.com, ...) are consumer
+    mailboxes not tied to an organization. This is handy for filtering B2B
+    signups that should use a company address.
+
+    Args:
+        email: The email address to check.
+
+    Returns:
+        True if the domain is in :data:`FREE_EMAIL_DOMAINS`. Returns False for
+        inputs without an ``@`` separator.
+    """
+    cleaned = normalize(email)
+    if "@" not in cleaned:
+        return False
+    domain = cleaned.rsplit("@", 1)[1]
+    return domain in FREE_EMAIL_DOMAINS
+
+
 def compare_emails(a: str, b: str) -> bool:
     """Return True if *a* and *b* are equivalent after normalization.
 
@@ -352,6 +424,30 @@ def suggest_domain(domain: str) -> str:
             best_dist = dist
             best_domain = candidate
     return best_domain
+
+
+def suggest_email(email: str) -> str:
+    """Suggest a corrected full email address for a likely domain typo.
+
+    Applies :func:`suggest_domain` to the address's domain and, when a close
+    match is found, returns the full ``local@suggested`` address. The local
+    part (including any plus-tag) is preserved unchanged.
+
+    Args:
+        email: The email address to check.
+
+    Returns:
+        The corrected email address, or an empty string when the domain is
+        already recognized, no close match exists, or the input has no ``@``.
+    """
+    cleaned = email.strip()
+    if "@" not in cleaned:
+        return ""
+    local, domain = cleaned.rsplit("@", 1)
+    suggestion = suggest_domain(domain)
+    if not suggestion:
+        return ""
+    return f"{local}@{suggestion}"
 
 
 def _validate_rfc5321_strict(local: str, domain: str) -> str:
@@ -431,6 +527,7 @@ def validate_email(
 
     disposable = domain in disposable_set
     role = is_role_based(raw)
+    free = domain in FREE_EMAIL_DOMAINS
     suggestion = suggest_domain(domain)
 
     if check_mx:
@@ -449,6 +546,7 @@ def validate_email(
                 error=f"MX lookup failed for domain: {domain}",
                 is_disposable=disposable,
                 is_role_based=role,
+                is_free=free,
                 suggested_domain=suggestion,
             )
 
@@ -458,6 +556,7 @@ def validate_email(
         domain=domain,
         is_disposable=disposable,
         is_role_based=role,
+        is_free=free,
         suggested_domain=suggestion,
     )
 
