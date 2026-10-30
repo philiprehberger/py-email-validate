@@ -194,6 +194,37 @@ compare_emails("foo.bar+tag@gmail.com", "foobar@gmail.com")   # True
 compare_emails("foo@a.com", "bar@a.com")                      # False
 ```
 
+### Deduplicating emails
+
+Remove duplicates by normalized form, keeping the first original spelling and input order:
+
+```python
+from philiprehberger_email_validate import dedupe_emails
+
+dedupe_emails(["Foo@Gmail.com", "f.oo+news@gmail.com", "bar@example.com"])
+# ["Foo@Gmail.com", "bar@example.com"]
+```
+
+### Grouping by domain
+
+Invalid addresses are collected under the `None` key:
+
+```python
+from philiprehberger_email_validate import group_by_domain
+
+group_by_domain(["a@Example.com", "b@test.org", "c@example.com", "oops"])
+# {"example.com": ["a@Example.com", "c@example.com"], "test.org": ["b@test.org"], None: ["oops"]}
+```
+
+### Serializing results
+
+```python
+import json
+from philiprehberger_email_validate import validate_email
+
+json.dumps(validate_email("user@example.com").to_dict())
+```
+
 ## API
 
 | Function / Class | Description |
@@ -218,6 +249,9 @@ compare_emails("foo@a.com", "bar@a.com")                      # False
 | `email_parts(email)` | Split email into structured parts (local, domain, tld, normalized) |
 | `EmailParts` | Dataclass with `local`, `domain`, `tld`, `normalized` fields |
 | `mask_email(email, mask_char, visible)` | Mask the local part for privacy display |
+| `dedupe_emails(emails)` | Remove duplicates by normalized form, keeping the first original spelling and input order |
+| `group_by_domain(emails)` | Group addresses by normalized domain; invalid addresses go under the `None` key |
+| `EmailResult.to_dict()` | Return the result fields as a plain dictionary |
 
 ## Development
 

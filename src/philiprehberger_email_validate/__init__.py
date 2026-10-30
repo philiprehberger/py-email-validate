@@ -5,7 +5,8 @@ from __future__ import annotations
 import concurrent.futures as _futures
 import re
 import socket
-from dataclasses import dataclass, field
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass, field
 
 __all__ = [
     "EmailResult",
@@ -28,6 +29,8 @@ __all__ = [
     "EmailParts",
     "email_parts",
     "mask_email",
+    "dedupe_emails",
+    "group_by_domain",
 ]
 
 _EMAIL_REGEX = re.compile(
@@ -277,6 +280,17 @@ class EmailResult:
     is_role_based: bool = field(default=False)
     is_free: bool = field(default=False)
     suggested_domain: str = field(default="")
+
+    def to_dict(self) -> dict[str, str | bool]:
+        """Return the result as a plain dictionary.
+
+        Useful for JSON serialization or logging. Keys match the dataclass
+        field names.
+
+        Returns:
+            A new dict mapping each field name to its value.
+        """
+        return asdict(self)
 
 
 def normalize(email: str) -> str:
@@ -687,3 +701,53 @@ def mask_email(email: str, mask_char: str = "*", visible: int = 1) -> str:
     else:
         masked_local = local[:visible] + mask_char * 3 + local[-visible:]
     return f"{masked_local}@{domain}"
+
+
+def dedupe_emails(emails: Iterable[str]) -> list[str]:
+    """Remove duplicate email addresses by their normalized form.
+
+    Two addresses are duplicates when :func:`normalize` maps them to the same
+    value (so case, surrounding whitespace, plus-tags, and Gmail dots are
+    ignored). The first original spelling of each address is kept, and input
+    order is preserved. Inputs without an ``@`` are compared by their
+    stripped, lowercased form.
+
+    Args:
+        emails: The email addresses to deduplicate.
+
+    Returns:
+        A list of the first occurrence of each distinct address, unchanged.
+    """
+    seen: set[str] = set()
+    results: list[str] = []
+    for email in emails:
+        key = normalize(email)
+        if key not in seen:
+            seen.add(key)
+            results.append(email)
+    return results
+
+
+def group_by_domain(emails: Iterable[str]) -> dict[str | None, list[str]]:
+    """Group email addresses by their normalized domain.
+
+    Domains are taken from :func:`normalize`, so ``User@Example.COM`` is
+    grouped under ``"example.com"``. Addresses that fail :func:`is_valid`
+    are collected under the ``None`` key rather than dropped. Within each
+    group the original spellings are kept in input order; duplicates are not
+    removed (combine with :func:`dedupe_emails` for that).
+
+    Args:
+        emails: The email addresses to group.
+
+    Returns:
+        A dict mapping each domain (or ``None`` for invalid addresses) to the
+        list of addresses in that group. Keys appear in first-seen order.
+    """
+    groups: dict[str | None, list[str]] = {}
+    for email in emails:
+        key: str | None = None
+        if is_valid(email):
+            key = normalize(email).rsplit("@", 1)[1]
+        groups.setdefault(key, []).append(email)
+    return groups

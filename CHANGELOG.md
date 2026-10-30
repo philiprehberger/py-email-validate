@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0 (2026-10-30)
+
+- Add `dedupe_emails()` to remove duplicates by normalized form, keeping the first original spelling and input order
+- Add `group_by_domain()` to group addresses by normalized domain, with invalid addresses under the `None` key
+- Add `EmailResult.to_dict()` for plain-dict serialization
+
 ## 0.7.0 (2026-07-15)
 
 - Add free/public provider detection via `is_free_email()` and the `FREE_EMAIL_DOMAINS` constant

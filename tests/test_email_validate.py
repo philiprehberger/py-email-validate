@@ -10,8 +10,10 @@ from philiprehberger_email_validate import (
     EmailParts,
     EmailResult,
     compare_emails,
+    dedupe_emails,
     email_parts,
     extract_emails,
+    group_by_domain,
     is_disposable,
     is_free_email,
     is_role_based,
@@ -546,3 +548,85 @@ def test_suggest_email_no_suggestion_for_known_domain() -> None:
 
 def test_suggest_email_no_at_sign() -> None:
     assert suggest_email("not-an-email") == ""
+
+
+# --- EmailResult.to_dict ---
+
+
+def test_email_result_to_dict() -> None:
+    data = validate_email("Info@Gmail.com").to_dict()
+    assert data == {
+        "valid": True,
+        "normalized": "info@gmail.com",
+        "domain": "gmail.com",
+        "error": "",
+        "is_disposable": False,
+        "is_role_based": True,
+        "is_free": True,
+        "suggested_domain": "",
+    }
+
+
+def test_email_result_to_dict_invalid() -> None:
+    data = validate_email("bad@@email").to_dict()
+    assert data["valid"] is False
+    assert data["error"] == "Invalid email syntax"
+
+
+def test_email_result_to_dict_returns_copy() -> None:
+    result = validate_email("user@example.com")
+    data = result.to_dict()
+    data["valid"] = False
+    assert result.valid is True
+
+
+# --- dedupe_emails ---
+
+
+def test_dedupe_emails_keeps_first_spelling_and_order() -> None:
+    emails = ["B@example.com", "a@example.com", "b@EXAMPLE.com", "A@example.com"]
+    assert dedupe_emails(emails) == ["B@example.com", "a@example.com"]
+
+
+def test_dedupe_emails_gmail_dots_and_plus() -> None:
+    emails = ["first.last+promo@gmail.com", "firstlast@gmail.com", "first.last@example.com"]
+    assert dedupe_emails(emails) == ["first.last+promo@gmail.com", "first.last@example.com"]
+
+
+def test_dedupe_emails_non_gmail_dots_significant() -> None:
+    assert dedupe_emails(["a.b@example.com", "ab@example.com"]) == [
+        "a.b@example.com",
+        "ab@example.com",
+    ]
+
+
+def test_dedupe_emails_empty_and_generator() -> None:
+    assert dedupe_emails([]) == []
+    assert dedupe_emails(e for e in ["x@a.com", " X@A.com "]) == ["x@a.com"]
+
+
+# --- group_by_domain ---
+
+
+def test_group_by_domain_basic() -> None:
+    emails = ["a@Example.com", "b@test.org", "c@example.com"]
+    assert group_by_domain(emails) == {
+        "example.com": ["a@Example.com", "c@example.com"],
+        "test.org": ["b@test.org"],
+    }
+
+
+def test_group_by_domain_invalid_under_none() -> None:
+    groups = group_by_domain(["user@example.com", "not-an-email", "bad@@email"])
+    assert groups[None] == ["not-an-email", "bad@@email"]
+    assert groups["example.com"] == ["user@example.com"]
+
+
+def test_group_by_domain_keeps_duplicates_and_key_order() -> None:
+    groups = group_by_domain(["x@b.com", "y@a.com", "x@b.com"])
+    assert list(groups) == ["b.com", "a.com"]
+    assert groups["b.com"] == ["x@b.com", "x@b.com"]
+
+
+def test_group_by_domain_empty() -> None:
+    assert group_by_domain([]) == {}
